@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "NFT Token Checker",
+  "version": "1.0.0",
+  "description": "Check NFT level and ban status without connecting wallet",
+  "permissions": [
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://*/*",
+    "http://*/*"
+  ],
+  "action": {
+    "default_popup": "nft-checker.html",
+    "default_title": "NFT Token Checker"
+  }
+} 

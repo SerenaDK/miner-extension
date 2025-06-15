@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFT Token Checker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #000000;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 0;
+            margin: 0;
+        }
+
+        .container {
+            background: #1a1a1a;
+            border-radius: 0;
+            box-shadow: none;
+            padding: 25px;
+            width: 400px;
+            min-height: 500px;
+            overflow-y: auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 2rem;
+            margin-bottom: 5px;
+            background: linear-gradient(135deg, #FFD700, #FF4500);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: #FFEBCD;
+            font-size: 1rem;
+        }
+
+        .search-section {
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 6px;
+            color: #FFFACD;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: #FFA500;
+            box-shadow: 0 0 0 3px rgba(255,165,0,0.1);
+        }
+
+        .search-btn {
+            width: 100%;
+            padding: 12px;
+            background: #FF4500;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(255,69,0,0.3);
+        }
+
+        .search-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .results {
+            margin-top: 15px;
+            padding: 15px;
+            background: #2a2a2a;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .results.show {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #e1e5e9;
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+        }
+
+        .result-label {
+            font-weight: 600;
+            color: #FFFACD;
+            font-size: 0.9rem;
+        }
+
+        .result-value {
+            font-weight: 500;
+            padding: 6px 12px;
+            border-radius: 15px;
+            background: #e9ecef;
+            color: white;
+            font-size: 0.85rem;
+        }
+
+        .result-value.banned {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .result-value.not-banned {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .result-value.level {
+            background: linear-gradient(135deg, #FF8C00, #FF4500);
+            color: white;
+        }
+
+        /* Specific style for the Token ID result circle */
+        #tokenIdResult {
+            background: linear-gradient(135deg, #FF8C00, #FF4500); /* Matched to NFT Level gradient */
+            color: white; /* Ensure text is white for contrast */
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: none;
+            font-size: 0.9rem;
+        }
+
+        .error.show {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .loading {
+            text-align: center;
+            color: #FFD700;
+            margin-top: 15px;
+            display: none;
+            font-size: 0.9rem;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #FFD700;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 8px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔥 BURN</h1>
+        </div>
+
+        <div class="search-section">
+            <div class="input-group">
+                <label for="tokenId">Token ID:</label>
+                <input type="number" id="tokenId" placeholder="Enter NFT Token ID" min="0" />
+            </div>
+
+            <button class="search-btn" id="checkBtn">
+                Check NFT
+            </button>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Checking NFT information...</p>
+        </div>
+
+        <div class="error" id="error"></div>
+
+        <div class="results" id="results">
+            <div class="result-item">
+                <span class="result-label">Token ID:</span>
+                <span class="result-value" id="tokenIdResult">-</span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">NFT Level:</span>
+                <span class="result-value level" id="levelResult">-</span>
+            </div>
+            <div class="result-item" id="banStatusRow" style="display: none;">
+                <span class="result-label">Ban Status:</span>
+                <span class="result-value" id="banResult">-</span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">Verified:</span>
+                <span class="result-value" id="verifiedResult">-</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="nft-checker.js"></script>
+</body>
+</html> 
