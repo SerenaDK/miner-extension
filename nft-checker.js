@@ -289,6 +289,74 @@ async function checkNFT() {
     }
 }
 
+// OpenSea URL detection and token ID extraction
+function extractTokenIdFromOpenSea(url) {
+    // Pattern: https://opensea.io/item/ronin/CONTRACT_ADDRESS/TOKEN_ID
+    const openseaPattern = /https:\/\/opensea\.io\/item\/ronin\/([^\/]+)\/(\d+)/;
+    const match = url.match(openseaPattern);
+    
+    if (match) {
+        return {
+            contractAddress: match[1],
+            tokenId: match[2]
+        };
+    }
+    return null;
+}
+
+function checkCurrentTab() {
+    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+        if (tabs[0]) {
+            const currentUrl = tabs[0].url;
+            console.log('🔍 Current URL:', currentUrl);
+            
+            // Check if user is on OpenSea
+            if (currentUrl.includes('opensea.io/item/ronin/')) {
+                const extracted = extractTokenIdFromOpenSea(currentUrl);
+                
+                if (extracted) {
+                    console.log('🌊 OpenSea NFT detected:', extracted);
+                    showOpenSeaSection(extracted);
+                } else {
+                    hideOpenSeaSection();
+                }
+            } else {
+                hideOpenSeaSection();
+            }
+        }
+    });
+}
+
+function showOpenSeaSection(nftData) {
+    const openseaSection = document.getElementById('openseaSection');
+    const openseaInfo = document.getElementById('openseaInfo');
+    const autoFillBtn = document.getElementById('autoFillBtn');
+    
+    if (openseaSection && openseaInfo && autoFillBtn) {
+        // Show the OpenSea section
+        openseaSection.style.display = 'block';
+        
+        // Update the info text
+        openseaInfo.textContent = `Token ID ${nftData.tokenId} found on this page`;
+        
+        // Add click handler for auto-fill button
+        autoFillBtn.onclick = function() {
+            document.getElementById('tokenId').value = nftData.tokenId;
+            // Optionally auto-check the NFT
+            checkNFT();
+        };
+        
+        console.log('✅ OpenSea section shown with token ID:', nftData.tokenId);
+    }
+}
+
+function hideOpenSeaSection() {
+    const openseaSection = document.getElementById('openseaSection');
+    if (openseaSection) {
+        openseaSection.style.display = 'none';
+    }
+}
+
 // Event listeners
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 NFT Checker Extension Loaded!');
@@ -297,6 +365,9 @@ document.addEventListener('DOMContentLoaded', function() {
         rpc: network.rpc,
         contract: CONTRACT_ADDRESS
     });
+    
+    // Check current tab for OpenSea
+    checkCurrentTab();
     
     // Add click event listener to the button
     document.getElementById('checkBtn').addEventListener('click', checkNFT);
@@ -312,4 +383,5 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('💡 Extension updated to match your actual ABI!');
     console.log('💡 Testing: owner, nftLevel, verifiedNFTs');
     console.log('💡 Note: bannedNFTs function does NOT exist in your contract ABI');
+    console.log('🌊 OpenSea integration enabled!');
 }); 

@@ -1,14 +1,16 @@
 {
   "manifest_version": 3,
   "name": "NFT Token Checker",
-  "version": "1.0.0",
-  "description": "Check NFT level and ban status without connecting wallet",
+  "version": "1.1.0",
+  "description": "Check NFT level and ban status without connecting wallet - with OpenSea integration",
   "permissions": [
-    "activeTab"
+    "activeTab",
+    "tabs"
   ],
   "host_permissions": [
     "https://*/*",
-    "http://*/*"
+    "http://*/*",
+    "https://opensea.io/*"
   ],
   "action": {
     "default_popup": "nft-checker.html",
