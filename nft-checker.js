@@ -5,8 +5,73 @@ const network = {
     chainId: 2021
 };
 
-// Your MiningNFTReward contract address on Saigon Testnet
-const CONTRACT_ADDRESS = '0x6f738Cc2996877D6907c22Bdda38b90b37Ba21C6';
+// NFT Collections Configuration
+const NFT_COLLECTIONS = {
+    'mining-nft': {
+        name: 'Mining NFT Reward',
+        contractAddress: '0x6f738Cc2996877D6907c22Bdda38b90b37Ba21C6',
+        description: 'Original Mining NFT Collection - Confirmed Working'
+    },
+    'gaming-nft': {
+        name: 'Gaming NFT Collection',
+        contractAddress: '0x0000000000000000000000000000000000000000', // Placeholder - update with actual address
+        description: 'Gaming NFT Collection for Rewards (Update contract address)'
+    },
+    'special-nft': {
+        name: 'Special Edition NFTs',
+        contractAddress: '0x0000000000000000000000000000000000000000', // Placeholder - update with actual address
+        description: 'Limited Special Edition NFTs (Update contract address)'
+    }
+};
+
+// Get currently selected collection
+function getSelectedCollection() {
+    const selectedKey = document.getElementById('collectionSelect')?.value || 'mining-nft';
+    return NFT_COLLECTIONS[selectedKey];
+}
+
+// Get current contract address based on selected collection
+function getCurrentContractAddress() {
+    return getSelectedCollection().contractAddress;
+}
+
+// Populate collection dropdown
+function populateCollectionDropdown() {
+    const select = document.getElementById('collectionSelect');
+    if (!select) return;
+    
+    // Clear existing options
+    select.innerHTML = '';
+    
+    // Define emojis for each collection
+    const collectionEmojis = {
+        'mining-nft': '🔥',
+        'gaming-nft': '🎮',
+        'special-nft': '⭐'
+    };
+    
+    // Add options for each collection
+    Object.entries(NFT_COLLECTIONS).forEach(([key, collection]) => {
+        const option = document.createElement('option');
+        option.value = key;
+        const emoji = collectionEmojis[key] || '📦';
+        option.textContent = `${emoji} ${collection.name}`;
+        select.appendChild(option);
+    });
+}
+
+// Handle collection change
+function onCollectionChange() {
+    const selectedCollection = getSelectedCollection();
+    console.log('🔄 Collection changed to:', selectedCollection.name);
+    console.log('📍 New contract address:', selectedCollection.contractAddress);
+    
+    // Clear any existing results
+    document.getElementById('results').classList.remove('show');
+    document.getElementById('error').classList.remove('show');
+    
+    // You could add more UI updates here, like showing collection info
+}
 
 // Function signatures - generated from your actual ABI
 const FUNCTION_SIGNATURES = {
@@ -16,9 +81,7 @@ const FUNCTION_SIGNATURES = {
     // NFT-specific functions - from your actual MiningNFTReward.json ABI
     nftLevel: '0xbec98691',        // nftLevel(uint256) - returns uint256
     verifiedNFTs: '0xd7a3100e',    // verifiedNFTs(uint256) - returns bool
-    
-    // NOTE: bannedNFTs function does NOT exist in your ABI!
-    // Your contract doesn't have a bannedNFTs function at all
+    bannedNFTs: '0xd6912d26',      // bannedNFTs(uint256) - returns bool
 };
 
 // Helper function to pad hex string to 64 characters (32 bytes)
@@ -57,7 +120,7 @@ async function callContractFunctionNoParams(functionSig) {
     });
     
     const result = await makeRPCCall('eth_call', [{
-        to: CONTRACT_ADDRESS,
+        to: getCurrentContractAddress(),
         data: functionSig
     }, 'latest']);
 
@@ -82,7 +145,7 @@ async function callContractFunction(functionSig, tokenId) {
     });
     
     const result = await makeRPCCall('eth_call', [{
-        to: CONTRACT_ADDRESS,
+        to: getCurrentContractAddress(),
         data: data
     }, 'latest']);
 
@@ -137,8 +200,16 @@ async function testNFTFunctions(tokenId) {
         results.nftLevel = { success: false, error: error.message };
     }
     
-    // NOTE: bannedNFTs function does NOT exist in the contract ABI
-    // The contract doesn't have this function, so we skip it entirely
+    // Test bannedNFTs
+    try {
+        console.log(`🔍 Testing bannedNFTs for token ${tokenId}...`);
+        const result = await callContractFunction(FUNCTION_SIGNATURES.bannedNFTs, tokenId);
+        console.log(`✅ bannedNFTs SUCCESS:`, result);
+        results.bannedNFTs = { success: true, result };
+    } catch (error) {
+        console.log(`❌ bannedNFTs FAILED:`, error.message);
+        results.bannedNFTs = { success: false, error: error.message };
+    }
     
     return results;
 }
@@ -161,12 +232,28 @@ function showError(message) {
 }
 
 function showResults(tokenId, level, isBanned, isVerified) {
+    const selectedCollection = getSelectedCollection();
+    
     document.getElementById('tokenIdResult').textContent = tokenId;
     document.getElementById('levelResult').textContent = level;
     
+    // Update collection info if element exists
+    const collectionResult = document.getElementById('collectionResult');
+    if (collectionResult) {
+        collectionResult.textContent = selectedCollection.name;
+    }
+    
+    // Show/hide ban status row based on whether NFT is banned
+    const banStatusRow = document.getElementById('banStatusRow');
     const banResult = document.getElementById('banResult');
-    banResult.textContent = isBanned ? 'BANNED' : 'NOT BANNED';
-    banResult.className = `result-value ${isBanned ? 'banned' : 'not-banned'}`;
+    
+    if (isBanned) {
+        banStatusRow.style.display = 'flex';
+        banResult.textContent = 'BANNED';
+        banResult.className = 'result-value banned';
+    } else {
+        banStatusRow.style.display = 'none';
+    }
     
     const verifiedResult = document.getElementById('verifiedResult');
     verifiedResult.textContent = isVerified ? 'VERIFIED' : 'NOT VERIFIED';
@@ -180,8 +267,11 @@ async function checkNFT() {
     const tokenId = document.getElementById('tokenId').value.trim();
 
     // Validation
-    if (!CONTRACT_ADDRESS || CONTRACT_ADDRESS === '0x...') {
-        showError('Contract address not configured. Please update the CONTRACT_ADDRESS in the code.');
+    const selectedCollection = getSelectedCollection();
+    if (!getCurrentContractAddress() || 
+        getCurrentContractAddress() === '0x...' || 
+        getCurrentContractAddress() === '0x0000000000000000000000000000000000000000') {
+        showError(`⚠️ ${selectedCollection.name} is not configured yet.\n\nPlease update the contract address in the code for this collection, or select a different collection that has been configured.`);
         return;
     }
 
@@ -202,13 +292,17 @@ async function checkNFT() {
     showLoading();
 
     try {
+        // Log which collection we're checking
+        console.log(`🎯 Checking NFT in collection: ${selectedCollection.name}`);
+        console.log(`📍 Contract address: ${selectedCollection.contractAddress}`);
+        
         // First, verify the contract exists
-        const contractCode = await makeRPCCall('eth_getCode', [CONTRACT_ADDRESS, 'latest']);
+        const contractCode = await makeRPCCall('eth_getCode', [getCurrentContractAddress(), 'latest']);
         if (contractCode === '0x' || contractCode === '0x0') {
-            throw new Error('Contract not found at the specified address');
+            throw new Error(`Contract not found at the specified address for ${selectedCollection.name}`);
         }
         
-        console.log('✅ Contract exists, code length:', contractCode.length);
+        console.log(`✅ Contract exists for ${selectedCollection.name}, code length:`, contractCode.length);
         
         // Test owner function to verify connection
         const ownerResult = await testOwnerFunction();
@@ -237,16 +331,18 @@ async function checkNFT() {
             console.log('✅ Using nftLevel function');
         }
         
-        // bannedNFTs function does NOT exist in the contract ABI
-        // So we don't check for it at all
+        if (testResults.bannedNFTs?.success) {
+            bannedResult = testResults.bannedNFTs.result;
+            console.log('✅ Using bannedNFTs function');
+        }
 
         // If all NFT functions failed, provide helpful suggestions
-        if (!verifiedResult && !levelResult) { // Only check the functions we're actually calling
-            let errorMsg = `❌ All NFT functions failed for token ID ${tokenId}\n\n`;
+        if (!verifiedResult && !levelResult && !bannedResult) {
+            let errorMsg = `❌ All NFT functions failed for token ID ${tokenId} in ${selectedCollection.name}\n\n`;
             errorMsg += `This could mean:\n`;
-            errorMsg += `• Token ID ${tokenId} doesn't exist in the contract\n`;
-            errorMsg += `• Try a token ID that works in your React app\n`;
-            errorMsg += `• The function signatures might be incorrect\n`;
+            errorMsg += `• Token ID ${tokenId} doesn't exist in the ${selectedCollection.name} contract\n`;
+            errorMsg += `• Try a different token ID or a different collection\n`;
+            errorMsg += `• The function signatures might be incorrect for this collection\n`;
             errorMsg += `• Contract might require different parameters\n`;
             
             throw new Error(errorMsg);
@@ -255,13 +351,13 @@ async function checkNFT() {
         // Parse results - matching React approach with Number() conversion for level
         const isVerified = verifiedResult ? parseInt(verifiedResult, 16) === 1 : false;
         const level = levelResult ? Number(parseInt(levelResult, 16)) : 0; // Using Number() like React
-        const isBanned = false; // Always false - bannedNFTs function doesn't exist in the contract
+        const isBanned = bannedResult ? parseInt(bannedResult, 16) === 1 : false; // Parse banned status
 
         console.log('📊 Final parsed results (matching React approach):', { 
             isVerified, 
             level, 
             isBanned,
-            rawResults: { verifiedResult, levelResult }
+            rawResults: { verifiedResult, levelResult, bannedResult }
         });
 
         showResults(tokenId, level, isBanned, isVerified);
@@ -295,8 +391,17 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('📋 Configuration:', {
         network: network.name,
         rpc: network.rpc,
-        contract: CONTRACT_ADDRESS
+        availableCollections: Object.keys(NFT_COLLECTIONS).length
     });
+    
+    // Populate collection dropdown
+    populateCollectionDropdown();
+    
+    // Add collection change event listener
+    const collectionSelect = document.getElementById('collectionSelect');
+    if (collectionSelect) {
+        collectionSelect.addEventListener('change', onCollectionChange);
+    }
     
     // Add click event listener to the button
     document.getElementById('checkBtn').addEventListener('click', checkNFT);
@@ -308,8 +413,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
+    // Log initial collection info
+    const initialCollection = getSelectedCollection();
+    console.log('🎯 Initial collection:', initialCollection.name);
+    console.log('📍 Initial contract:', initialCollection.contractAddress);
+    
     // Add helpful suggestion in the UI
-    console.log('💡 Extension updated to match your actual ABI!');
-    console.log('💡 Testing: owner, nftLevel, verifiedNFTs');
-    console.log('💡 Note: bannedNFTs function does NOT exist in your contract ABI');
+    console.log('💡 Extension updated with multiple NFT collections support!');
+    console.log('💡 Available collections:', Object.keys(NFT_COLLECTIONS).join(', '));
+    console.log('💡 Testing: owner, nftLevel, verifiedNFTs, bannedNFTs');
 }); 

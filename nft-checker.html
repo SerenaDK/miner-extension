@@ -173,6 +173,12 @@
             color: white; /* Ensure text is white for contrast */
         }
 
+        /* Specific style for the Collection result */
+        #collectionResult {
+            background: linear-gradient(135deg, #9932CC, #8A2BE2);
+            color: white;
+        }
+
         .error {
             background: #f8d7da;
             color: #721c24;
@@ -224,8 +230,18 @@
 
         <div class="search-section">
             <div class="input-group">
+                <label for="collectionSelect">NFT Collection:</label>
+                <select id="collectionSelect">
+                    <option value="mining-nft">🔥 Mining NFT Reward</option>
+                    <option value="gaming-nft">🎮 Gaming NFT Collection</option>
+                    <option value="special-nft">⭐ Special Edition NFTs</option>
+                </select>
+                <small style="color: #FFFACD; font-size: 0.8rem; margin-top: 4px; display: block;">Select which NFT collection to scan</small>
+            </div>
+
+            <div class="input-group">
                 <label for="tokenId">Token ID:</label>
-                <input type="number" id="tokenId" placeholder="Enter NFT Token ID" min="0" />
+                <input type="number" id="tokenId" placeholder="Enter NFT Token ID (e.g., 1, 123, 5000)" min="0" />
             </div>
 
             <button class="search-btn" id="checkBtn">
@@ -241,6 +257,10 @@
         <div class="error" id="error"></div>
 
         <div class="results" id="results">
+            <div class="result-item">
+                <span class="result-label">Collection:</span>
+                <span class="result-value" id="collectionResult">-</span>
+            </div>
             <div class="result-item">
                 <span class="result-label">Token ID:</span>
                 <span class="result-value" id="tokenIdResult">-</span>
