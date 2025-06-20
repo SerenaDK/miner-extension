@@ -1,12 +1,12 @@
-// Network configuration - Saigon Testnet only
+// Network configuration - Ronin Mainnet
 const network = {
-    name: 'Saigon Testnet',
-    rpc: 'https://saigon-testnet.roninchain.com/rpc',
-    chainId: 2021
+    name: 'Ronin Mainnet',
+    rpc: 'https://api.roninchain.com/rpc',
+    chainId: 2020
 };
 
-// Your MiningNFTReward contract address on Saigon Testnet
-const CONTRACT_ADDRESS = '0x6f738Cc2996877D6907c22Bdda38b90b37Ba21C6';
+// Your MiningNFTReward contract address on Ronin Mainnet
+const CONTRACT_ADDRESS = '0xc0A07436d5bcf89590ec63Da35760b830B7d2b90';
 
 // Function signatures - generated from your actual ABI
 const FUNCTION_SIGNATURES = {
