@@ -5,8 +5,11 @@ const network = {
     chainId: 2020
 };
 
-// Your MiningNFTReward contract address on Ronin Mainnet
-const CONTRACT_ADDRESS = '0xc0A07436d5bcf89590ec63Da35760b830B7d2b90';
+// A list of all your supported NFT reward contracts
+const NFT_CONTRACTS = {
+    'Ember': '0xc0A07436d5bcf89590ec63Da35760b830B7d2b90',
+    'Flame': '0xf99573849330E1a16aFe137Fcb2BD321a7003825'
+};
 
 // Function signatures - generated from your actual ABI
 const FUNCTION_SIGNATURES = {
@@ -25,6 +28,16 @@ const FUNCTION_SIGNATURES = {
 function padHex(hex, length = 64) {
     const cleanHex = hex.toString().replace('0x', '');
     return cleanHex.padStart(length, '0');
+}
+
+// Helper function to get the currently selected contract address from the dropdown
+function getCurrentContractAddress() {
+    const selector = document.getElementById('contractSelect');
+    if (selector && selector.value) {
+        return selector.value;
+    }
+    // Fallback to the first contract if the selector isn't ready
+    return NFT_CONTRACTS['Ember'];
 }
 
 // Helper function to make RPC call
@@ -56,8 +69,9 @@ async function callContractFunctionNoParams(functionSig) {
         finalData: functionSig
     });
     
+    const currentContractAddress = getCurrentContractAddress();
     const result = await makeRPCCall('eth_call', [{
-        to: CONTRACT_ADDRESS,
+        to: currentContractAddress,
         data: functionSig
     }, 'latest']);
 
@@ -81,8 +95,9 @@ async function callContractFunction(functionSig, tokenId) {
         finalData: data
     });
     
+    const currentContractAddress = getCurrentContractAddress();
     const result = await makeRPCCall('eth_call', [{
-        to: CONTRACT_ADDRESS,
+        to: currentContractAddress,
         data: data
     }, 'latest']);
 
@@ -178,10 +193,11 @@ function showResults(tokenId, level, isBanned, isVerified) {
 
 async function checkNFT() {
     const tokenId = document.getElementById('tokenId').value.trim();
+    const currentContractAddress = getCurrentContractAddress();
 
     // Validation
-    if (!CONTRACT_ADDRESS || CONTRACT_ADDRESS === '0x...') {
-        showError('Contract address not configured. Please update the CONTRACT_ADDRESS in the code.');
+    if (!currentContractAddress) {
+        showError('No collection selected. Please choose a collection from the dropdown.');
         return;
     }
 
@@ -203,7 +219,7 @@ async function checkNFT() {
 
     try {
         // First, verify the contract exists
-        const contractCode = await makeRPCCall('eth_getCode', [CONTRACT_ADDRESS, 'latest']);
+        const contractCode = await makeRPCCall('eth_getCode', [currentContractAddress, 'latest']);
         if (contractCode === '0x' || contractCode === '0x0') {
             throw new Error('Contract not found at the specified address');
         }
@@ -339,6 +355,17 @@ function showOpenSeaSection(nftData) {
         // Update the info text
         openseaInfo.textContent = `Token ID ${nftData.tokenId} found on this page`;
         
+        // Auto-select the correct contract in the dropdown if it matches
+        const selector = document.getElementById('contractSelect');
+        const detectedAddress = nftData.contractAddress.toLowerCase();
+        
+        for (const name in NFT_CONTRACTS) {
+            if (NFT_CONTRACTS[name].toLowerCase() === detectedAddress) {
+                selector.value = NFT_CONTRACTS[name];
+                break; // Exit loop once found
+            }
+        }
+        
         // Add click handler for auto-fill button
         autoFillBtn.onclick = function() {
             document.getElementById('tokenId').value = nftData.tokenId;
@@ -357,13 +384,32 @@ function hideOpenSeaSection() {
     }
 }
 
+// Populates the NFT collection selector dropdown
+function populateContractSelector() {
+    const selector = document.getElementById('contractSelect');
+    if (!selector) return;
+
+    selector.innerHTML = ''; // Clear existing options
+
+    for (const name in NFT_CONTRACTS) {
+        const option = document.createElement('option');
+        option.value = NFT_CONTRACTS[name];
+        option.textContent = name;
+        selector.appendChild(option);
+    }
+}
+
 // Event listeners
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 NFT Checker Extension Loaded!');
+    
+    // Populate the contract selector dropdown
+    populateContractSelector();
+    
     console.log('📋 Configuration:', {
         network: network.name,
         rpc: network.rpc,
-        contract: CONTRACT_ADDRESS
+        contracts: NFT_CONTRACTS
     });
     
     // Check current tab for OpenSea
