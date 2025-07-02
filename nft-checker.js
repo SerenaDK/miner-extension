@@ -5,10 +5,16 @@ const network = {
     chainId: 2020
 };
 
-// A list of all your supported NFT reward contracts
-const NFT_CONTRACTS = {
-    'Ember': '0xc0A07436d5bcf89590ec63Da35760b830B7d2b90',
-    'Flame': '0xf99573849330E1a16aFe137Fcb2BD321a7003825'
+// A list of all your supported NFT reward contracts and their corresponding NFT addresses
+const NFT_COLLECTIONS = {
+    'Ember': {
+        rewardContract: '0xc0A07436d5bcf89590ec63Da35760b830B7d2b90',
+        nftContract: '0x9fc8f7576d889d47de089cdf702fa84908ec5c29' // OpenSea NFT contract
+    },
+    'Flame': {
+        rewardContract: '0xf99573849330E1a16aFe137Fcb2BD321a7003825',
+        nftContract: '0x538995d165e816ec6fbd6788f132f6bc8323d509' // OpenSea NFT contract
+    }
 };
 
 // Function signatures - generated from your actual ABI
@@ -37,7 +43,7 @@ function getCurrentContractAddress() {
         return selector.value;
     }
     // Fallback to the first contract if the selector isn't ready
-    return NFT_CONTRACTS['Ember'];
+    return NFT_COLLECTIONS['Ember'].rewardContract;
 }
 
 // Helper function to make RPC call
@@ -357,11 +363,12 @@ function showOpenSeaSection(nftData) {
         
         // Auto-select the correct contract in the dropdown if it matches
         const selector = document.getElementById('contractSelect');
-        const detectedAddress = nftData.contractAddress.toLowerCase();
+        const detectedNftContract = nftData.contractAddress.toLowerCase();
         
-        for (const name in NFT_CONTRACTS) {
-            if (NFT_CONTRACTS[name].toLowerCase() === detectedAddress) {
-                selector.value = NFT_CONTRACTS[name];
+        for (const name in NFT_COLLECTIONS) {
+            const collection = NFT_COLLECTIONS[name];
+            if (collection.nftContract.toLowerCase() === detectedNftContract) {
+                selector.value = collection.rewardContract;
                 break; // Exit loop once found
             }
         }
@@ -391,9 +398,9 @@ function populateContractSelector() {
 
     selector.innerHTML = ''; // Clear existing options
 
-    for (const name in NFT_CONTRACTS) {
+    for (const name in NFT_COLLECTIONS) {
         const option = document.createElement('option');
-        option.value = NFT_CONTRACTS[name];
+        option.value = NFT_COLLECTIONS[name].rewardContract;
         option.textContent = name;
         selector.appendChild(option);
     }
@@ -409,7 +416,7 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('📋 Configuration:', {
         network: network.name,
         rpc: network.rpc,
-        contracts: NFT_CONTRACTS
+        contracts: NFT_COLLECTIONS
     });
     
     // Check current tab for OpenSea
