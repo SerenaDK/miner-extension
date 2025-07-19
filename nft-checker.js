@@ -14,6 +14,10 @@ const NFT_COLLECTIONS = {
     'Flame': {
         rewardContract: '0xf99573849330E1a16aFe137Fcb2BD321a7003825',
         nftContract: '0x538995d165e816ec6fbd6788f132f6bc8323d509' // OpenSea NFT contract
+    },
+    'Infernos': {
+        rewardContract: '0x23737007202C2505e2CE7254b67F02c23BD77e52',
+        nftContract: '0x05ea953f7a39e51647d23c8086dc3d65c85a5600' // Using same address for both reward and NFT contract
     }
 };
 
@@ -21,11 +25,11 @@ const NFT_COLLECTIONS = {
 const FUNCTION_SIGNATURES = {
     // Basic contract info
     owner: '0x8da5cb5b',           // owner() - confirmed working
-    
+
     // NFT-specific functions - from your actual MiningNFTReward.json ABI
     nftLevel: '0xbec98691',        // nftLevel(uint256) - returns uint256
     verifiedNFTs: '0xd7a3100e',    // verifiedNFTs(uint256) - returns bool
-    
+
     // NOTE: bannedNFTs function does NOT exist in your ABI!
     // Your contract doesn't have a bannedNFTs function at all
 };
@@ -74,7 +78,7 @@ async function callContractFunctionNoParams(functionSig) {
         functionSig,
         finalData: functionSig
     });
-    
+
     const currentContractAddress = getCurrentContractAddress();
     const result = await makeRPCCall('eth_call', [{
         to: currentContractAddress,
@@ -91,7 +95,7 @@ async function callContractFunction(functionSig, tokenId) {
     const tokenIdHex = tokenIdBigInt.toString(16);
     const paddedTokenId = padHex(tokenIdHex);
     const data = functionSig + paddedTokenId;
-    
+
     console.log('Contract call details (matching React BigInt approach):', {
         functionSig,
         tokenId,
@@ -100,7 +104,7 @@ async function callContractFunction(functionSig, tokenId) {
         paddedTokenId,
         finalData: data
     });
-    
+
     const currentContractAddress = getCurrentContractAddress();
     const result = await makeRPCCall('eth_call', [{
         to: currentContractAddress,
@@ -113,16 +117,16 @@ async function callContractFunction(functionSig, tokenId) {
 // Test only the owner function to verify contract connection
 async function testOwnerFunction() {
     console.log('🧪 Testing owner function...');
-    
+
     try {
         console.log(`🔍 Testing owner (${FUNCTION_SIGNATURES.owner})...`);
         const result = await callContractFunctionNoParams(FUNCTION_SIGNATURES.owner);
         console.log(`✅ owner SUCCESS:`, result);
-        
+
         // Display owner address in readable format
         const ownerAddress = '0x' + result.slice(-40); // Take last 40 characters (20 bytes)
         console.log(`👤 Contract Owner: ${ownerAddress}`);
-        
+
         return { success: true, result, ownerAddress };
     } catch (error) {
         console.log(`❌ owner FAILED:`, error.message);
@@ -133,9 +137,9 @@ async function testOwnerFunction() {
 // Test NFT-specific functions
 async function testNFTFunctions(tokenId) {
     console.log(`🧪 Testing NFT functions for token ${tokenId}...`);
-    
+
     const results = {};
-    
+
     // Test verifiedNFTs
     try {
         console.log(`🔍 Testing verifiedNFTs for token ${tokenId}...`);
@@ -146,7 +150,7 @@ async function testNFTFunctions(tokenId) {
         console.log(`❌ verifiedNFTs FAILED:`, error.message);
         results.verifiedNFTs = { success: false, error: error.message };
     }
-    
+
     // Test nftLevel
     try {
         console.log(`🔍 Testing nftLevel for token ${tokenId}...`);
@@ -157,10 +161,10 @@ async function testNFTFunctions(tokenId) {
         console.log(`❌ nftLevel FAILED:`, error.message);
         results.nftLevel = { success: false, error: error.message };
     }
-    
+
     // NOTE: bannedNFTs function does NOT exist in the contract ABI
     // The contract doesn't have this function, so we skip it entirely
-    
+
     return results;
 }
 
@@ -184,15 +188,15 @@ function showError(message) {
 function showResults(tokenId, level, isBanned, isVerified) {
     document.getElementById('tokenIdResult').textContent = tokenId;
     document.getElementById('levelResult').textContent = level;
-    
+
     const banResult = document.getElementById('banResult');
     banResult.textContent = isBanned ? 'BANNED' : 'NOT BANNED';
     banResult.className = `result-value ${isBanned ? 'banned' : 'not-banned'}`;
-    
+
     const verifiedResult = document.getElementById('verifiedResult');
     verifiedResult.textContent = isVerified ? 'VERIFIED' : 'NOT VERIFIED';
     verifiedResult.className = `result-value ${isVerified ? 'not-banned' : 'banned'}`;
-    
+
     document.getElementById('results').classList.add('show');
     hideLoading();
 }
@@ -212,7 +216,7 @@ async function checkNFT() {
         showError('Please enter a valid numeric token ID');
         return;
     }
-    
+
     // Additional validation - ensure we can convert to BigInt (like React does)
     try {
         BigInt(tokenId);
@@ -229,36 +233,36 @@ async function checkNFT() {
         if (contractCode === '0x' || contractCode === '0x0') {
             throw new Error('Contract not found at the specified address');
         }
-        
+
         console.log('✅ Contract exists, code length:', contractCode.length);
-        
+
         // Test owner function to verify connection
         const ownerResult = await testOwnerFunction();
         if (!ownerResult.success) {
             throw new Error('Failed to connect to contract - owner function failed');
         }
-        
+
         // Now test NFT-specific functions - matching React approach
         console.log('🔬 Testing NFT-specific functions for token:', tokenId);
         console.log('🔬 Converting to BigInt like React:', BigInt(tokenId).toString());
         const testResults = await testNFTFunctions(tokenId);
-        
+
         // Try to find working signatures
         let verifiedResult = null;
         let levelResult = null;
         let bannedResult = null;
-        
+
         // Check results
         if (testResults.verifiedNFTs?.success) {
             verifiedResult = testResults.verifiedNFTs.result;
             console.log('✅ Using verifiedNFTs function');
         }
-        
+
         if (testResults.nftLevel?.success) {
             levelResult = testResults.nftLevel.result;
             console.log('✅ Using nftLevel function');
         }
-        
+
         // bannedNFTs function does NOT exist in the contract ABI
         // So we don't check for it at all
 
@@ -270,7 +274,7 @@ async function checkNFT() {
             errorMsg += `• Try a token ID that works in your React app\n`;
             errorMsg += `• The function signatures might be incorrect\n`;
             errorMsg += `• Contract might require different parameters\n`;
-            
+
             throw new Error(errorMsg);
         }
 
@@ -279,9 +283,9 @@ async function checkNFT() {
         const level = levelResult ? Number(parseInt(levelResult, 16)) : 0; // Using Number() like React
         const isBanned = false; // Always false - bannedNFTs function doesn't exist in the contract
 
-        console.log('📊 Final parsed results (matching React approach):', { 
-            isVerified, 
-            level, 
+        console.log('📊 Final parsed results (matching React approach):', {
+            isVerified,
+            level,
             isBanned,
             rawResults: { verifiedResult, levelResult }
         });
@@ -291,7 +295,7 @@ async function checkNFT() {
     } catch (error) {
         console.error('❌ Error checking NFT:', error);
         let errorMessage = 'Failed to check NFT information.\n\n';
-        
+
         if (error.message.includes('All NFT functions failed') || error.message.includes('Token ID')) {
             errorMessage = error.message; // Use our custom error message
         } else if (error.message.includes('revert') || error.message.includes('execution reverted')) {
@@ -306,7 +310,7 @@ async function checkNFT() {
         } else {
             errorMessage += error.message;
         }
-        
+
         showError(errorMessage);
     }
 }
@@ -316,7 +320,7 @@ function extractTokenIdFromOpenSea(url) {
     // Pattern: https://opensea.io/item/ronin/CONTRACT_ADDRESS/TOKEN_ID
     const openseaPattern = /https:\/\/opensea\.io\/item\/ronin\/([^\/]+)\/(\d+)/;
     const match = url.match(openseaPattern);
-    
+
     if (match) {
         return {
             contractAddress: match[1],
@@ -327,15 +331,15 @@ function extractTokenIdFromOpenSea(url) {
 }
 
 function checkCurrentTab() {
-    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
         if (tabs[0]) {
             const currentUrl = tabs[0].url;
             console.log('🔍 Current URL:', currentUrl);
-            
+
             // Check if user is on OpenSea
             if (currentUrl.includes('opensea.io/item/ronin/')) {
                 const extracted = extractTokenIdFromOpenSea(currentUrl);
-                
+
                 if (extracted) {
                     console.log('🌊 OpenSea NFT detected:', extracted);
                     showOpenSeaSection(extracted);
@@ -353,18 +357,18 @@ function showOpenSeaSection(nftData) {
     const openseaSection = document.getElementById('openseaSection');
     const openseaInfo = document.getElementById('openseaInfo');
     const autoFillBtn = document.getElementById('autoFillBtn');
-    
+
     if (openseaSection && openseaInfo && autoFillBtn) {
         // Show the OpenSea section
         openseaSection.style.display = 'block';
-        
+
         // Update the info text
         openseaInfo.textContent = `Token ID ${nftData.tokenId} found on this page`;
-        
+
         // Auto-select the correct contract in the dropdown if it matches
         const selector = document.getElementById('contractSelect');
         const detectedNftContract = nftData.contractAddress.toLowerCase();
-        
+
         for (const name in NFT_COLLECTIONS) {
             const collection = NFT_COLLECTIONS[name];
             if (collection.nftContract.toLowerCase() === detectedNftContract) {
@@ -372,14 +376,14 @@ function showOpenSeaSection(nftData) {
                 break; // Exit loop once found
             }
         }
-        
+
         // Add click handler for auto-fill button
-        autoFillBtn.onclick = function() {
+        autoFillBtn.onclick = function () {
             document.getElementById('tokenId').value = nftData.tokenId;
             // Optionally auto-check the NFT
             checkNFT();
         };
-        
+
         console.log('✅ OpenSea section shown with token ID:', nftData.tokenId);
     }
 }
@@ -407,31 +411,31 @@ function populateContractSelector() {
 }
 
 // Event listeners
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     console.log('🚀 NFT Checker Extension Loaded!');
-    
+
     // Populate the contract selector dropdown
     populateContractSelector();
-    
+
     console.log('📋 Configuration:', {
         network: network.name,
         rpc: network.rpc,
         contracts: NFT_COLLECTIONS
     });
-    
+
     // Check current tab for OpenSea
     checkCurrentTab();
-    
+
     // Add click event listener to the button
     document.getElementById('checkBtn').addEventListener('click', checkNFT);
-    
+
     // Allow Enter key to trigger search
-    document.getElementById('tokenId').addEventListener('keypress', function(e) {
+    document.getElementById('tokenId').addEventListener('keypress', function (e) {
         if (e.key === 'Enter') {
             checkNFT();
         }
     });
-    
+
     // Add helpful suggestion in the UI
     console.log('💡 Extension updated to match your actual ABI!');
     console.log('💡 Testing: owner, nftLevel, verifiedNFTs');
